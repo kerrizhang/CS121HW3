@@ -62,15 +62,58 @@ def build_index(a):
                             p = Posting(n,v)
                             table[k].append((p.docid, p.tfidf))
                     if n%5000 == 0:
-                        pickle.dump(table, open('disk/disk' + str(n) + '.pickle', 'wb'))
+                        table_list = sorted(table.items())
+                        pickle.dump(table_list, open('disk/mergefile' + str(n) + '.pickle', 'wb'))
+
                         table.clear()
-                        print(pickle.load(open('disk/disk' + str(n) + '.pickle', 'rb')))
     pickle.dump(table, open('disk/disk' + str(n) + '.pickle', 'wb'))
     table.clear()
     print("DONE")
-    return table
+
+    FINAL_INDEX = []
+
+    diskfiles = os.listdir('disk')
+
+    for picklefile in diskfiles:
+        #FINAL_INDEX = [('2007', [(99999, 2)]), ('30000', [(69, 1)])]
+        final_i = 0
+        second_i = 0
+        #second_pickle_file = test_list
+        second_pickle_file = pickle.load(open('disk/' + str(picklefile), 'rb'))
+
+        while final_i < len(FINAL_INDEX) and second_i < len(second_pickle_file):
+            if (FINAL_INDEX[final_i][0] == second_pickle_file[second_i][0]):
+                for x in second_pickle_file[second_i][1]:
+                    FINAL_INDEX[final_i][1].append(x)
+                final_i += 1
+                second_i += 1
+
+            elif (FINAL_INDEX[final_i][0] < second_pickle_file[second_i][0]):
+                final_i += 1
+            else:
+                FINAL_INDEX.insert(final_i, second_pickle_file[second_i])
+                final_i += 1
+                second_i += 1
+
+        if final_i == len(FINAL_INDEX):
+            if second_i == len(second_pickle_file):
+                pass
+            else:
+                FINAL_INDEX.append(second_pickle_file[second_i:])
+    pickle.dump(FINAL_INDEX, open('disk/final_index.pickle', 'wb'))
+    f = open("results.txt", "a")
+    for thing in FINAL_INDEX:
+        f.write(thing)
+        f.write("\n")
+    f.close()
+    return FINAL_INDEX
+
+
 
 if __name__ == '__main__':
+    empty_dict = dict()
+    #empty_dict = pickle.load(open(empty_dict, 'disk/disk5000.pickle', 'rb'))
+    pickle.dump(empty_dict, open('disk/mergefile.pickle', 'wb'))
     f = open("stopwords.txt")
     for line in f:
         stopwords.add(line.strip("\n"))
@@ -78,6 +121,9 @@ if __name__ == '__main__':
     print(stopwords)
     a = os.walk('DEV')
     result = build_index(a)
+    print(result)
+    #test([('2007', [(9, 2), (51, 2), (58, 1), (99, 3)]), ('2010', [(67, 1)]), ('2011', [(6, 1)])])
+
 
 
 
