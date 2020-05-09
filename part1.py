@@ -37,7 +37,7 @@ def build_index(a):
     table = {}
     urls = set()
     n = 0
-    testing = False
+    testing = True
 
     if not testing:
         for ii, b in enumerate(a):
@@ -72,8 +72,6 @@ def build_index(a):
         table_list = sorted(table.items())
         pickle.dump(table_list, open('disk/mergefile' + str(n) + '.pickle', 'wb'))
         table.clear()
-        print("FINAL_INDEX = ")
-        print(len(FINAL_INDEX))
         print("DONE")
 
     FINAL_INDEX = []
@@ -84,7 +82,7 @@ def build_index(a):
     for picklefile in diskfiles:
         if str(picklefile)[-6:] == "pickle":
             print("****** testing " + str(picklefile))
-            print(len(FINAL_INDEX))
+            #print(len(FINAL_INDEX))
             #FINAL_INDEX = [('2007', [(99999, 2)]), ('30000', [(69, 1)])]
             final_i = 0
             second_i = 0
@@ -92,9 +90,9 @@ def build_index(a):
             #with open('disk/' + str(picklefile), 'rb') as fin:
             #    second_pickle_file = pickle.load(fin)
             second_pickle_file = pickle.load(open('disk/' + str(picklefile), 'rb'))
-
+            print("_________________________________")
             while final_i < len(FINAL_INDEX) and second_i < len(second_pickle_file):
-                print(final_i)
+                #print(final_i)
                 if (FINAL_INDEX[final_i][0] == second_pickle_file[second_i][0]):
                     for x in second_pickle_file[second_i][1]:
                         FINAL_INDEX[final_i][1].append(x)
@@ -116,9 +114,13 @@ def build_index(a):
     pickle.dump(FINAL_INDEX, open('final_index.pickle', 'wb'))
     f = open("results.txt", "a")
     for thing in FINAL_INDEX:
-        f.write(str(thing))
+        f.write("TOKEN: " + str(thing[0]) + "   POSTINGS: " + str(thing[1]))
+        f.write("\n")
+        f.write("________________________________________________________________________________________________________________")
         f.write("\n")
     f.close()
+    print("FINAL_INDEX = ")
+    print(len(FINAL_INDEX))
     return FINAL_INDEX
 
 
