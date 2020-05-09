@@ -36,45 +36,49 @@ def build_index(a):
     table = {}
     urls = set()
     n = 0
+    testing = False
 
-    for ii, b in enumerate(a):
-        #print(b[0])
-        #print(str(b[0]) + "__________")
-        if b[0] != 'DEV':
+    if not testing:
+        for ii, b in enumerate(a):
+            #print(b[0])
+            #print(str(b[0]) + "__________")
+            if b[0] != 'DEV':
 
-            something = os.listdir(b[0])
-            for i in something:
-                print(str(round(Decimal(n/55393),3)*100) + "% done, on file number " + str(n))
-                if i not in urls:
-                    urls.add(i)
+                something = os.listdir(b[0])
+                for i in something:
+                    print(str(round(Decimal(n/55393),3)*100) + "% done, on file number " + str(n))
+                    if i not in urls:
+                        urls.add(i)
 
-                    n += 1
-                    data = json.load(open(b[0] + '/' + i))
-                    txt = data['content']
-                    soup = BeautifulSoup(txt, "html.parser")
-                    text = soup.get_text()
-                    tokens = computeWordFrequencies(tokenize(text))
-                    for k,v in tokens.items():
-                        if k not in table.keys():
-                            p = Posting(n,v)
-                            table[k] = [(p.docid, p.tfidf)]
-                        else:
-                            p = Posting(n,v)
-                            table[k].append((p.docid, p.tfidf))
-                    if n%5000 == 0:
-                        table_list = sorted(table.items())
-                        pickle.dump(table_list, open('disk/mergefile' + str(n) + '.pickle', 'wb'))
+                        n += 1
+                        data = json.load(open(b[0] + '/' + i))
+                        txt = data['content']
+                        soup = BeautifulSoup(txt, "html.parser")
+                        text = soup.get_text()
+                        tokens = computeWordFrequencies(tokenize(text))
+                        for k,v in tokens.items():
+                            if k not in table.keys():
+                                p = Posting(n,v)
+                                table[k] = [(p.docid, p.tfidf)]
+                            else:
+                                p = Posting(n,v)
+                                table[k].append((p.docid, p.tfidf))
+                        if n%5000 == 0:
+                            table_list = sorted(table.items())
+                            pickle.dump(table_list, open('disk/mergefile' + str(n) + '.pickle', 'wb'))
 
-                        table.clear()
-    pickle.dump(table, open('disk/disk' + str(n) + '.pickle', 'wb'))
-    table.clear()
-    print("DONE")
+                            table.clear()
+        table_list = sorted(table.items())
+        pickle.dump(table_list, open('disk/mergefile' + str(n) + '.pickle', 'wb'))
+        table.clear()
+        print("DONE")
 
     FINAL_INDEX = []
 
     diskfiles = os.listdir('disk')
 
     for picklefile in diskfiles:
+        print("****** testing " + str(picklefile))
         #FINAL_INDEX = [('2007', [(99999, 2)]), ('30000', [(69, 1)])]
         final_i = 0
         second_i = 0
@@ -82,6 +86,13 @@ def build_index(a):
         second_pickle_file = pickle.load(open('disk/' + str(picklefile), 'rb'))
 
         while final_i < len(FINAL_INDEX) and second_i < len(second_pickle_file):
+            #print(second_pickle_file)
+            #print(type(second_pickle_file))
+            #print(FINAL_INDEX)
+            #print("WITH INDEX SECOND_I: ")
+            #print(second_pickle_file[second_i])
+            #print("index [0]: ")
+            #print(second_pickle_file[second_i][0])
             if (FINAL_INDEX[final_i][0] == second_pickle_file[second_i][0]):
                 for x in second_pickle_file[second_i][1]:
                     FINAL_INDEX[final_i][1].append(x)
@@ -99,8 +110,8 @@ def build_index(a):
             if second_i == len(second_pickle_file):
                 pass
             else:
-                FINAL_INDEX.append(second_pickle_file[second_i:])
-    pickle.dump(FINAL_INDEX, open('disk/final_index.pickle', 'wb'))
+                FINAL_INDEX.extend(second_pickle_file[second_i:])
+    pickle.dump(FINAL_INDEX, open('final_index.pickle', 'wb'))
     f = open("results.txt", "a")
     for thing in FINAL_INDEX:
         f.write(thing)
@@ -119,7 +130,7 @@ if __name__ == '__main__':
         stopwords.add(line.strip("\n"))
     f.close()
     print(stopwords)
-    a = os.walk('DEV')
+    a = os.walk('ANALYST')
     result = build_index(a)
     print(result)
     #test([('2007', [(9, 2), (51, 2), (58, 1), (99, 3)]), ('2010', [(67, 1)]), ('2011', [(6, 1)])])
