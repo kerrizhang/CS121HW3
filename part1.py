@@ -4,6 +4,7 @@ import re
 from bs4 import BeautifulSoup
 import pickle
 from decimal import Decimal
+#import timer
 
 stopwords = set()
 
@@ -63,7 +64,7 @@ def build_index(a):
                             else:
                                 p = Posting(n,v)
                                 table[k].append((p.docid, p.tfidf))
-                        if n%5000 == 0:
+                        if n%5000== 0:
                             table_list = sorted(table.items())
                             pickle.dump(table_list, open('disk/mergefile' + str(n) + '.pickle', 'wb'))
 
@@ -71,50 +72,51 @@ def build_index(a):
         table_list = sorted(table.items())
         pickle.dump(table_list, open('disk/mergefile' + str(n) + '.pickle', 'wb'))
         table.clear()
+        print("FINAL_INDEX = ")
+        print(len(FINAL_INDEX))
         print("DONE")
 
     FINAL_INDEX = []
 
     diskfiles = os.listdir('disk')
+    print(diskfiles)
 
     for picklefile in diskfiles:
-        print("****** testing " + str(picklefile))
-        #FINAL_INDEX = [('2007', [(99999, 2)]), ('30000', [(69, 1)])]
-        final_i = 0
-        second_i = 0
-        #second_pickle_file = test_list
-        second_pickle_file = pickle.load(open('disk/' + str(picklefile), 'rb'))
+        if str(picklefile)[-6:] == "pickle":
+            print("****** testing " + str(picklefile))
+            print(len(FINAL_INDEX))
+            #FINAL_INDEX = [('2007', [(99999, 2)]), ('30000', [(69, 1)])]
+            final_i = 0
+            second_i = 0
+            #second_pickle_file = test_list
+            #with open('disk/' + str(picklefile), 'rb') as fin:
+            #    second_pickle_file = pickle.load(fin)
+            second_pickle_file = pickle.load(open('disk/' + str(picklefile), 'rb'))
 
-        while final_i < len(FINAL_INDEX) and second_i < len(second_pickle_file):
-            #print(second_pickle_file)
-            #print(type(second_pickle_file))
-            #print(FINAL_INDEX)
-            #print("WITH INDEX SECOND_I: ")
-            #print(second_pickle_file[second_i])
-            #print("index [0]: ")
-            #print(second_pickle_file[second_i][0])
-            if (FINAL_INDEX[final_i][0] == second_pickle_file[second_i][0]):
-                for x in second_pickle_file[second_i][1]:
-                    FINAL_INDEX[final_i][1].append(x)
-                final_i += 1
-                second_i += 1
+            while final_i < len(FINAL_INDEX) and second_i < len(second_pickle_file):
+                print(final_i)
+                if (FINAL_INDEX[final_i][0] == second_pickle_file[second_i][0]):
+                    for x in second_pickle_file[second_i][1]:
+                        FINAL_INDEX[final_i][1].append(x)
+                    final_i += 1
+                    second_i += 1
 
-            elif (FINAL_INDEX[final_i][0] < second_pickle_file[second_i][0]):
-                final_i += 1
-            else:
-                FINAL_INDEX.insert(final_i, second_pickle_file[second_i])
-                final_i += 1
-                second_i += 1
+                elif (FINAL_INDEX[final_i][0] < second_pickle_file[second_i][0]):
+                    final_i += 1
+                else:
+                    FINAL_INDEX.insert(final_i, second_pickle_file[second_i])
+                    final_i += 1
+                    second_i += 1
 
-        if final_i == len(FINAL_INDEX):
-            if second_i == len(second_pickle_file):
-                pass
-            else:
-                FINAL_INDEX.extend(second_pickle_file[second_i:])
+            if final_i == len(FINAL_INDEX):
+                if second_i == len(second_pickle_file):
+                    pass
+                else:
+                    FINAL_INDEX.extend(second_pickle_file[second_i:])
     pickle.dump(FINAL_INDEX, open('final_index.pickle', 'wb'))
     f = open("results.txt", "a")
     for thing in FINAL_INDEX:
-        f.write(thing)
+        f.write(str(thing))
         f.write("\n")
     f.close()
     return FINAL_INDEX
@@ -124,7 +126,6 @@ def build_index(a):
 if __name__ == '__main__':
     empty_dict = dict()
     #empty_dict = pickle.load(open(empty_dict, 'disk/disk5000.pickle', 'rb'))
-    pickle.dump(empty_dict, open('disk/mergefile.pickle', 'wb'))
     f = open("stopwords.txt")
     for line in f:
         stopwords.add(line.strip("\n"))
