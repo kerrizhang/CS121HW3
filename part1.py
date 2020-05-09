@@ -130,7 +130,7 @@ if __name__ == '__main__':
         stopwords.add(line.strip("\n"))
     f.close()
     print(stopwords)
-    a = os.walk('ANALYST')
+    a = os.walk('DEV')
     result = build_index(a)
     print(result)
     #test([('2007', [(9, 2), (51, 2), (58, 1), (99, 3)]), ('2010', [(67, 1)]), ('2011', [(6, 1)])])
