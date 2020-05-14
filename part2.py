@@ -21,6 +21,7 @@ if __name__ == '__main__':
         # id_list.append([k[0] for k in get_ID(word)])
         id_list.append(get_ID(word))
     print(len(id_list))
+    print(id_list)
 
 
 
