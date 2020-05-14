@@ -37,6 +37,7 @@ def build_index(a):
     table = {}
     urls = set()
     n = 0
+    d = {}
     testing = True
 
     if not testing:
@@ -52,6 +53,7 @@ def build_index(a):
                         urls.add(i)
 
                         n += 1
+                        d[n] = i
                         data = json.load(open(b[0] + '/' + i))
                         txt = data['content']
                         soup = BeautifulSoup(txt, "html.parser")
@@ -112,6 +114,7 @@ def build_index(a):
                 else:
                     FINAL_INDEX.extend(second_pickle_file[second_i:])
     pickle.dump(FINAL_INDEX, open('final_index.pickle', 'wb'))
+    pickle.dump(d, open('urls.pickle', 'wb'))
     f = open("results.txt", "a")
     for thing in FINAL_INDEX:
         f.write("TOKEN: " + str(thing[0]) + "   POSTINGS: " + str(thing[1]))
