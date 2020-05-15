@@ -19,7 +19,8 @@ def tfidf(id_list):
 
 if __name__ == '__main__':
     inverted_index = dict(pickle.load(open('final_index.pickle', 'rb')))
-    #d = dict(pickle.load(open('urls.pickle', 'rb')))
+    di = pickle.load(open('urls.pickle', 'rb'))
+    print(di)
     full_query = "cristina lopes"
     wordlist = full_query.split(" ")
     wordlist = [value for value in wordlist if value.lower() != "and" and value.lower() not in stopwords]
@@ -59,7 +60,10 @@ if __name__ == '__main__':
     print("newl:", newl)
     d = tfidf(newl)
     li = sorted(d.items(), key=lambda x:x[1], reverse = True)
-    print(li[:5])
+    #print(di)
+    for thing in li[:5]:
+        print(thing[0])
+        print(di[thing[0]])
 
 
 
