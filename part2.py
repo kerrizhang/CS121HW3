@@ -13,7 +13,7 @@ def get_ID(query):
 def tfidf(id_list):
     d = {}
     for tup in id_list:
-        d[tup[0]] = (1+math.log10(tup[1]) * math.log10(55393/len(id_list)))
+        d[tup[0]] = (1+math.log10(tup[1])) * math.log10(55393/len(id_list))
     return d
 
 
