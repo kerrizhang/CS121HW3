@@ -38,7 +38,8 @@ def build_index(a):
     urls = set()
     n = 0
     d = {}
-    testing = True
+    testing = False
+    first = True
 
     if not testing:
         for ii, b in enumerate(a):
@@ -53,12 +54,24 @@ def build_index(a):
                         urls.add(i)
 
                         n += 1
-                        d[n] = i
+
                         data = json.load(open(b[0] + '/' + i))
                         txt = data['content']
+                        d[n] = data['url']
+
                         soup = BeautifulSoup(txt, "html.parser")
                         text = soup.get_text()
-                        tokens = computeWordFrequencies(tokenize(text))
+
+                        normaltokens = tokenize(text)
+
+                        #DOUBLING THE POINTS FOR TITLE, HEADERS, AND BOLD TEXT HERE:
+                        for tag in soup.find_all("title"):
+                            normaltokens.extend(tokenize(tag.get_text()))
+                        for tag in soup.find_all(re.compile('^h[1-6]$')):
+                            normaltokens.extend(tokenize(tag.get_text()))
+                        for tag in soup.find_all("b"):
+                            normaltokens.extend(tokenize(tag.get_text()))
+                        tokens = computeWordFrequencies(normaltokens)
                         for k,v in tokens.items():
                             if k not in table.keys():
                                 p = Posting(n,v)
@@ -71,6 +84,7 @@ def build_index(a):
                             pickle.dump(table_list, open('disk/mergefile' + str(n) + '.pickle', 'wb'))
 
                             table.clear()
+                        first = False;
         table_list = sorted(table.items())
         pickle.dump(table_list, open('disk/mergefile' + str(n) + '.pickle', 'wb'))
         table.clear()
