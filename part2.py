@@ -41,7 +41,7 @@ def query_cos(query):
     term_freq = dict()
     #term_freq = {term in query: tf*idf}
     #term list = number of docs the term shows up in (length of posting list)
-    for token in query.split(" "):
+    for token in query:
         print(token)
         if token in term_freq:
             term_freq[token] += 1
@@ -68,7 +68,7 @@ def doc_tfidf(intersection, query):
     doc_product = {}
     # doc_product = {docID: dotproduct}
     # print("Doc intersection: ", intersection)
-    query_words = query.split(" ")
+    query_words = query
     print("intersection: ")
     print(intersection)
     # For each of the docid's in the intersection
@@ -76,12 +76,14 @@ def doc_tfidf(intersection, query):
         query_word_dict = {}
         # query_word_dict = {query_word: doc freq}
         for word in query_words:
-            postings = inverted_index[word]
-            for tup in postings:
-                if tup[0] == docid:
-                    #FIX : replace key
-                    query_word_dict[word] = (1 + math.log10(tup[1]))
-        doc_norm_dict = normalize(query_word_dict)
+                postings = inverted_index[word]
+                for tup in postings:
+                    if tup[0] == docid:
+                        #FIX : replace key
+                        query_word_dict[word] = (1 + math.log10(tup[1]))
+
+        #TOOK OUT DOCUMENT DICT NORMALIZATION
+        doc_norm_dict = query_word_dict#normalize(query_word_dict)
         # {query_word = doc_norm_freq}
         query_norm_dict = query_cos(query)
         print(docid_urls[docid])
@@ -107,7 +109,7 @@ def doc_tfidf(intersection, query):
 if __name__ == '__main__':
     #print("doc_tfidf")
     #doc_tfidf([22576], "cristina lopes")
-    print(query_cos("cristina lopes"))
+    #print(query_cos("cristina lopes"))
     var = True
     while var:
         full_query = input("Enter your query: ")
@@ -136,7 +138,7 @@ if __name__ == '__main__':
             else:
                 intersection = docids.intersection(intersection)
 
-        top_urls = doc_tfidf(list(intersection), full_query)
+        top_urls = doc_tfidf(list(intersection), wordlist)
         # top_urls = {docIDs, cosine_similarity}
         sorted_urls = sorted(top_urls.items(), key=lambda x: x[1], reverse=True)
         # sorted_url [(docIDs, cosine_similarity), ...]
