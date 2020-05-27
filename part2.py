@@ -2,6 +2,9 @@ import part1
 import pickle
 import math
 import sys
+from flask import Flask, render_template, request
+
+app = Flask(__name__)
 
 inverted_index = dict(pickle.load(open('final_index.pickle', 'rb')))
 docid_urls = pickle.load(open('urls.pickle', 'rb'))
@@ -21,6 +24,11 @@ stopwords = {"a", "about", "above", "after", "again", "against", "all", "am", "a
              "when", "when's", "where", "where's", "which", "while", "who", "who's", "whom", "why", "why's", "with",
              "won't", "would", "wouldn't", "you", "you'd", "you'll", "you're", "you've", "your", "yours", "yourself",
              "yourselves"}
+
+
+@app.route('/')
+def index():
+    return render_template('search.html')
 
 
 def get_ID(query):
@@ -104,12 +112,63 @@ def doc_tfidf(intersection, query):
     return doc_product
 
 
+@app.route('/', methods=['POST'])
+def printvalue():
+    name = request.form['query']
+
+    #return "Search results for: " + name
+
+    full_query = str(name)
+
+    # wordlist = sys.argv[1:]
+    # full_query = "cristina lopes"
+    wordlist = full_query.split(" ")
+    wordlist = [value.lower() for value in wordlist if value.lower() != "and" and value.lower() not in stopwords]
+    # wordlist = [value.lower() for value in wordlist]
+    #print("wordlist: ", wordlist)
+    id_list = []
+    intersection = set()
+    newl = []
+    for word in wordlist:
+        docids = set()
+
+        l = get_ID(word)
+        # print(l)
+        id_list.append(l)
+        for i in l:
+            docids.add(i[0])
+        if len(intersection) == 0:
+            # print(docids)
+            intersection = docids
+        else:
+            intersection = docids.intersection(intersection)
+
+    top_urls = doc_tfidf(list(intersection), wordlist)
+    # top_urls = {docIDs, cosine_similarity}
+    sorted_urls = sorted(top_urls.items(), key=lambda x: x[1], reverse=True)
+    # sorted_url [(docIDs, cosine_similarity), ...]
+    for tup in sorted_urls[:5]:
+        print(docid_urls[tup[0]])
+
+    n_1 = docid_urls[sorted_urls[0][0]]
+    n_2 = docid_urls[sorted_urls[1][0]]
+    n_3 = docid_urls[sorted_urls[2][0]]
+    n_4 = docid_urls[sorted_urls[3][0]]
+    n_5 = docid_urls[sorted_urls[4][0]]
+
+    return render_template('results.html', n=name, n1=n_1, n2=n_2, n3=n_3, n4=n_4, n5=n_5)
+    #return render_template('results.html', n=name, n1=1, n2=2, n3=3, n4=4, n5=5)
+
+
 
 
 if __name__ == '__main__':
+    app.run(debug=True)
     #print("doc_tfidf")
     #doc_tfidf([22576], "cristina lopes")
     #print(query_cos("cristina lopes"))
+
+    
     var = True
     while var:
         full_query = input("Enter your query: ")
@@ -163,6 +222,7 @@ if __name__ == '__main__':
             print(docid_urls[thing[0]])
 
     #print(id_list)
+    
 
 
 
