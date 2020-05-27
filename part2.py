@@ -29,12 +29,12 @@ def get_ID(query):
     return []
 
 
-# def tfidf(id_list):
-#     #id_list = documents that contain the token
-#     d = {}
-#     for tup in id_list:
-#         d[tup[0]] = (1 + math.log10(tup[1])) * math.log10(55393 / len(id_list))
-#     return d
+def tfidf(id_list):
+    #id_list = documents that contain the token
+    d = {}
+    for tup in id_list:
+        d[tup[0]] = (1 + math.log10(tup[1])) * math.log10(55393 / len(id_list))
+    return d
 
 
 def query_cos(query):
@@ -60,7 +60,7 @@ def normalize(term_freq):
     normalize_dict = dict()
     for token, tfidf in term_freq.items():
         if qnum_sum != 0:
-            normalize_dict[token] = tfidf / qnum_sum
+            normalize_dict[token] = tfidf / math.sqrt(qnum_sum)
     return normalize_dict
 
 
@@ -69,8 +69,8 @@ def doc_tfidf(intersection, query):
     # doc_product = {docID: dotproduct}
     # print("Doc intersection: ", intersection)
     query_words = query.split(" ")
-
-
+    print("intersection: ")
+    print(intersection)
     # For each of the docid's in the intersection
     for docid in intersection:
         query_word_dict = {}
@@ -79,10 +79,14 @@ def doc_tfidf(intersection, query):
             postings = inverted_index[word]
             for tup in postings:
                 if tup[0] == docid:
+                    #FIX : replace key
                     query_word_dict[word] = (1 + math.log10(tup[1]))
         doc_norm_dict = normalize(query_word_dict)
         # {query_word = doc_norm_freq}
         query_norm_dict = query_cos(query)
+        print(docid_urls[docid])
+        print("doc norm dict: ")
+        print(doc_norm_dict)
         # {query_word = query_norm_freq}
         sorted_doc_norm = sorted(doc_norm_dict.items())
         sorted_query_norm = sorted(query_norm_dict.items())
@@ -93,8 +97,8 @@ def doc_tfidf(intersection, query):
                 sum += (sorted_query_norm[i][1] * sorted_doc_norm[i][1])
         print("Sum for {}: {}".format(docid, sum))
         doc_product[docid] = sum
-    print("lol 20 results pls??")
-    print(doc_product[22576])
+    #print("lol 20 results pls??")
+    #print(doc_product[22576])
     return doc_product
 
 
@@ -103,6 +107,7 @@ def doc_tfidf(intersection, query):
 if __name__ == '__main__':
     #print("doc_tfidf")
     #doc_tfidf([22576], "cristina lopes")
+    print(query_cos("cristina lopes"))
     var = True
     while var:
         full_query = input("Enter your query: ")
