@@ -8,6 +8,7 @@ app = Flask(__name__)
 
 inverted_index = dict(pickle.load(open('final_index.pickle', 'rb')))
 docid_urls = pickle.load(open('urls.pickle', 'rb'))
+docid_length = dict(pickle.load(open('docLengthFile.pickle', 'rb')))
 
 stopwords = {"a", "about", "above", "after", "again", "against", "all", "am", "an", "and", "any", "are", "aren't", "as",
              "at", "be", "because", "been", "before", "being", "below", "between", "both", "but", "by", "can't",
@@ -56,6 +57,7 @@ def query_cos(query):
         else:
             term_freq[token] = 1
     for tok, tf in term_freq.items():
+        tf = 1 + math.log10(tf)
         idf = math.log10(55393 /len(inverted_index[tok]))
         term_freq[tok] = tf * idf
     return normalize(term_freq)
@@ -106,10 +108,12 @@ def doc_tfidf(intersection, query):
             for i in range(len(sorted_doc_norm)):
                 sum += (sorted_query_norm[i][1] * sorted_doc_norm[i][1])
         print("Sum for {}: {}".format(docid, sum))
-        doc_product[docid] = sum
+        doc_product[docid] = sum#/docid_length[docid]
     #print("lol 20 results pls??")
     #print(doc_product[22576])
     return doc_product
+
+
 
 
 @app.route('/', methods=['POST'])
@@ -164,6 +168,8 @@ def printvalue():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
     #print("doc_tfidf")
     #doc_tfidf([22576], "cristina lopes")
     #print(query_cos("cristina lopes"))
