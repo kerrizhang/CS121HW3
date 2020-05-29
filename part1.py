@@ -4,6 +4,7 @@ import re
 from bs4 import BeautifulSoup
 import pickle
 from decimal import Decimal
+import requests
 #import timer
 
 stopwords = set()
@@ -37,6 +38,7 @@ def build_index(a):
     table = {}
     docLength = {}
     urls = set()
+    realurls = set()
     n = 0
     d = {}
     testing = False
@@ -59,66 +61,82 @@ def build_index(a):
                     #Defragmentalize
                     if "#" in i:
                         i = i[:i.find('#')]
-
+                    #print(i)
                     if i not in urls:
                         urls.add(i)
+
 
                         n += 1
 
                         data = json.load(open(b[0] + '/' + i))
                         txt = data['content']
-                        d[n] = data['url']
+                        #d[n] = data['url']
+                        tempurl = data['url']
+                        if "#" in tempurl:
+                            tempurl = tempurl[:tempurl.find('#')]
+                        d[n] = tempurl
 
-                        soup = BeautifulSoup(txt, "html.parser")
-                        text = soup.get_text(separator = " ")
-                        sizeOfPage = len(text)
+                        if tempurl not in realurls:
+                            realurls.add(tempurl)
+                            try:
+                                if requests.head(tempurl).status_code == 200:
 
-                        normaltokens = tokenize(text)
-                        docLength[n] = sizeOfPage
+                                    soup = BeautifulSoup(txt, "html.parser")
+                                    text = soup.get_text(separator = " ")
+                                    sizeOfPage = len(text)
 
-                        
-                    
-                        tokens = computeWordFrequencies(normaltokens)
-                        #print(sorted(tokens))
+                                    normaltokens = tokenize(text)
+                                    docLength[n] = sizeOfPage
 
-                        simhash_value = simhash(tokens)
-                        if simhash_value not in simhash_set:
-                            #DOUBLING THE POINTS FOR TITLE, HEADERS, AND BOLD TEXT HERE:
-                            for tag in soup.find_all("title"):
-                                for word in tokenize(tag.get_text(separator = " ")):
-                                    if word not in stopwords:
-                                        tokens[word] = tokens[word] + 0.5
-                            for tag in soup.find_all(re.compile('^h[1-9]$')):
-                                for word in tokenize(tag.get_text(separator = " ")):
-                                    if word not in stopwords:
-                                        tokens[word] = tokens[word] + 0.3
-                            for tag in soup.find_all("b"):
-                                for word in tokenize(tag.get_text(separator = " ")):
-                                    if word not in stopwords:
-                                        tokens[word] = tokens[word] + 0.2
-                            for tag in soup.find_all("strong"):
-                                for word in tokenize(tag.get_text(separator = " ")):
-                                    if word not in stopwords:
-                                        tokens[word] = tokens[word] + 0.2
-                            
-                            #print("******************************************************************")
-                            #print(tokens)
 
-                            for k,v in tokens.items():
-                                if k not in table.keys():
-                                    p = Posting(n,v)
-                                    table[k] = [(p.docid, p.tfidf)]
+
+                                    tokens = computeWordFrequencies(normaltokens)
+                                    #print(sorted(tokens))
+
+                                    simhash_value = simhash(tokens)
+                                    if simhash_value not in simhash_set:
+                                        #DOUBLING THE POINTS FOR TITLE, HEADERS, AND BOLD TEXT HERE:
+                                        for tag in soup.find_all("title"):
+                                            for word in tokenize(tag.get_text(separator = " ")):
+                                                if word not in stopwords:
+                                                    tokens[word] = tokens[word] + 0.5
+                                        for tag in soup.find_all(re.compile('^h[1-9]$')):
+                                            for word in tokenize(tag.get_text(separator = " ")):
+                                                if word not in stopwords:
+                                                    tokens[word] = tokens[word] + 0.3
+                                        for tag in soup.find_all("b"):
+                                            for word in tokenize(tag.get_text(separator = " ")):
+                                                if word not in stopwords:
+                                                    tokens[word] = tokens[word] + 0.2
+                                        for tag in soup.find_all("strong"):
+                                            for word in tokenize(tag.get_text(separator = " ")):
+                                                if word not in stopwords:
+                                                    tokens[word] = tokens[word] + 0.2
+
+                                        #print("******************************************************************")
+                                        #print(tokens)
+
+                                        for k,v in tokens.items():
+                                            if k not in table.keys():
+                                                p = Posting(n,v)
+                                                table[k] = [(p.docid, p.tfidf)]
+                                            else:
+                                                p = Posting(n,v)
+                                                table[k].append((p.docid, p.tfidf))
+                                        if n%5000== 0:
+                                            table_list = sorted(table.items())
+                                            pickle.dump(table_list, open('disk/mergefile' + str(n) + '.pickle', 'wb'))
+
+                                            table.clear()
+                                        first = False;
+                                    else:
+                                        print("This file is similar")
                                 else:
-                                    p = Posting(n,v)
-                                    table[k].append((p.docid, p.tfidf))
-                            if n%5000== 0:
-                                table_list = sorted(table.items())
-                                pickle.dump(table_list, open('disk/mergefile' + str(n) + '.pickle', 'wb'))
-
-                                table.clear()
-                            first = False;
+                                    print("URL invalid")
+                            except:
+                                print("Get response error")
                         else:
-                            print("This file is similar")
+                            print("THIS URL HAS ALREADY BEEN FOUND")
 
         table_list = sorted(table.items())
         pickle.dump(table_list, open('disk/mergefile' + str(n) + '.pickle', 'wb'))
