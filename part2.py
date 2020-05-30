@@ -9,6 +9,7 @@ app = Flask(__name__)
 inverted_index = dict(pickle.load(open('final_index.pickle', 'rb')))
 docid_urls = pickle.load(open('urls.pickle', 'rb'))
 docid_length = dict(pickle.load(open('docLengthFile.pickle', 'rb')))
+qnum_sum = 0
 
 stopwords = {"a", "about", "above", "after", "again", "against", "all", "am", "an", "and", "any", "are", "aren't", "as",
              "at", "be", "because", "been", "before", "being", "below", "between", "both", "but", "by", "can't",
@@ -39,7 +40,7 @@ def get_ID(query):
 
 
 def tfidf(id_list):
-    #id_list = documents that contain the token
+    # id_list = documents that contain the token
     d = {}
     for tup in id_list:
         d[tup[0]] = (1 + math.log10(tup[1])) * math.log10(55393 / len(id_list))
@@ -48,8 +49,8 @@ def tfidf(id_list):
 
 def query_cos(query):
     term_freq = dict()
-    #term_freq = {term in query: tf*idf}
-    #term list = number of docs the term shows up in (length of posting list)
+    # term_freq = {term in query: tf*idf}
+    # term list = number of docs the term shows up in (length of posting list)
     for token in query:
         print(token)
         if token in term_freq:
@@ -58,23 +59,24 @@ def query_cos(query):
             term_freq[token] = 1
     for tok, tf in term_freq.items():
         tf = 1 + math.log10(tf)
-        idf = math.log10(55393 /len(inverted_index[tok]))
+        idf = math.log10(55393 / len(inverted_index[tok]))
         term_freq[tok] = tf * idf
     return normalize(term_freq)
 
 
 def normalize(term_freq):
-    qnum_sum = 0
+    global qnum_sum
     for token, tfidf in term_freq.items():
         qnum_sum += pow(tfidf, 2)
     normalize_dict = dict()
     for token, tfidf in term_freq.items():
         if qnum_sum != 0:
-            normalize_dict[token] = tfidf / math.sqrt(qnum_sum)
+            normalize_dict[token] = (tfidf / math.sqrt(qnum_sum))
     return normalize_dict
 
 
 def doc_tfidf(intersection, query):
+    global qnum_sum
     doc_product = {}
     # doc_product = {docID: dotproduct}
     # print("Doc intersection: ", intersection)
@@ -82,45 +84,52 @@ def doc_tfidf(intersection, query):
     print("intersection: ")
     print(intersection)
     # For each of the docid's in the intersection
+    query_norm_dict = query_cos(query)
+    sorted_query_norm = sorted(query_norm_dict.items())
+    query_cardinality = math.sqrt(qnum_sum)
     for docid in intersection:
         query_word_dict = {}
         # query_word_dict = {query_word: doc freq}
         for word in query_words:
-                postings = inverted_index[word]
-                for tup in postings:
-                    if tup[0] == docid:
-                        #FIX : replace key
-                        query_word_dict[word] = (1 + math.log10(tup[1]))
+            postings = inverted_index[word]
+            for tup in postings:
+                if tup[0] == docid:
+                    # FIX : replace key
+                    #query_word_dict[word] = (1 + math.log10(tup[1])/docid_length[docid])
+                    query_word_dict[word] = 1 + math.log10(tup[1])
 
-        #TOOK OUT DOCUMENT DICT NORMALIZATION
-        doc_norm_dict = query_word_dict#normalize(query_word_dict)
+        # TOOK OUT DOCUMENT DICT NORMALIZATION
+        #doc_norm_dict = query_word_dict
+        doc_norm_dict = normalize(query_word_dict)
+        doc_cardinality = math.sqrt(qnum_sum)
         # {query_word = doc_norm_freq}
-        query_norm_dict = query_cos(query)
+
         print(docid_urls[docid])
         print("doc norm dict: ")
-        print(doc_norm_dict)
+        #print(doc_norm_dict)
         # {query_word = query_norm_freq}
+        #sorted_doc_norm = sorted(query_word_dict.items())
         sorted_doc_norm = sorted(doc_norm_dict.items())
-        sorted_query_norm = sorted(query_norm_dict.items())
         # sorted_doc_norm = [(term, tfidf_norm), ..]
         sum = 0
         if len(sorted_doc_norm) == len(sorted_query_norm):
             for i in range(len(sorted_doc_norm)):
                 sum += (sorted_query_norm[i][1] * sorted_doc_norm[i][1])
+        cosine_sim = (sum/ (doc_cardinality*query_cardinality))
         print("Sum for {}: {}".format(docid, sum))
-        doc_product[docid] = sum#/docid_length[docid]
-    #print("lol 20 results pls??")
-    #print(doc_product[22576])
+        #doc_product[docid] = (sum/docid_length[docid])
+        doc_product[docid] = sum
+        doc_product[docid] = cosine_sim
+    # print("lol 20 results pls??")
+    # print(doc_product[22576])
     return doc_product
-
-
 
 
 @app.route('/', methods=['POST'])
 def printvalue():
     name = request.form['query']
 
-    #return "Search results for: " + name
+    # return "Search results for: " + name
 
     full_query = str(name)
 
@@ -129,7 +138,7 @@ def printvalue():
     wordlist = full_query.split(" ")
     wordlist = [value.lower() for value in wordlist if value.lower() != "and" and value.lower() not in stopwords]
     # wordlist = [value.lower() for value in wordlist]
-    #print("wordlist: ", wordlist)
+    # print("wordlist: ", wordlist)
     id_list = []
     intersection = set()
     newl = []
@@ -161,20 +170,16 @@ def printvalue():
     n_5 = docid_urls[sorted_urls[4][0]]
 
     return render_template('results.html', n=name, n1=n_1, n2=n_2, n3=n_3, n4=n_4, n5=n_5)
-    #return render_template('results.html', n=name, n1=1, n2=2, n3=3, n4=4, n5=5)
-
-
+    # return render_template('results.html', n=name, n1=1, n2=2, n3=3, n4=4, n5=5)
 
 
 if __name__ == '__main__':
     app.run(debug=True)
 
+    # print("doc_tfidf")
+    # doc_tfidf([22576], "cristina lopes")
+    # print(query_cos("cristina lopes"))
 
-    #print("doc_tfidf")
-    #doc_tfidf([22576], "cristina lopes")
-    #print(query_cos("cristina lopes"))
-
-    
     var = True
     while var:
         full_query = input("Enter your query: ")
@@ -209,6 +214,7 @@ if __name__ == '__main__':
         # sorted_url [(docIDs, cosine_similarity), ...]
         for tup in sorted_urls[:5]:
             print(docid_urls[tup[0]])
+            print(docid_length[tup[0]])
 
         for id in intersection:
             counter = 0
@@ -217,7 +223,7 @@ if __name__ == '__main__':
                     if id == tup[0]:
                         counter += tup[1]
             newl.append((id, counter))
-        #print("newl:", newl)
+        # print("newl:", newl)
         # newl = [(docID, tf)]
         d = tfidf(newl)
         li = sorted(d.items(), key=lambda x: x[1], reverse=True)
@@ -227,8 +233,8 @@ if __name__ == '__main__':
             print(thing[0])
             print(docid_urls[thing[0]])
 
-    #print(id_list)
-    
+    # print(id_list)
+
 
 
 
