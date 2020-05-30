@@ -59,8 +59,11 @@ def query_cos(query):
             term_freq[token] = 1
     for tok, tf in term_freq.items():
         tf = 1 + math.log10(tf)
-        idf = math.log10(55393 / len(inverted_index[tok]))
-        term_freq[tok] = tf * idf
+        if tok in inverted_index.keys():
+            idf = math.log10(55393 / len(inverted_index[tok]))
+            term_freq[tok] = tf * idf
+        else:
+            print("Word does not exist")
     return normalize(term_freq)
 
 
@@ -163,11 +166,19 @@ def printvalue():
     for tup in sorted_urls[:5]:
         print(docid_urls[tup[0]])
 
-    n_1 = docid_urls[sorted_urls[0][0]]
-    n_2 = docid_urls[sorted_urls[1][0]]
-    n_3 = docid_urls[sorted_urls[2][0]]
-    n_4 = docid_urls[sorted_urls[3][0]]
-    n_5 = docid_urls[sorted_urls[4][0]]
+
+    if len(sorted_urls) < 5:
+        n_1 = "No results"
+        n_2 = "No results"
+        n_3 = "No results"
+        n_4 = "No results"
+        n_5 = "No results"
+    else:
+        n_1 = docid_urls[sorted_urls[0][0]]
+        n_2 = docid_urls[sorted_urls[1][0]]
+        n_3 = docid_urls[sorted_urls[2][0]]
+        n_4 = docid_urls[sorted_urls[3][0]]
+        n_5 = docid_urls[sorted_urls[4][0]]
 
     return render_template('results.html', n=name, n1=n_1, n2=n_2, n3=n_3, n4=n_4, n5=n_5)
     # return render_template('results.html', n=name, n1=1, n2=2, n3=3, n4=4, n5=5)
